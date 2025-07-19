@@ -75,18 +75,7 @@ class SnapHidePopup {
 
   async loadPageInfo() {
     if (!this.currentTab) return;
-
-    document.getElementById('pageTitle').textContent = this.currentTab.title || 'Unknown Page';
-    document.getElementById('pageUrl').textContent = this.getDisplayUrl(this.currentTab.url);
-  }
-
-  getDisplayUrl(url) {
-    try {
-      const urlObj = new URL(url);
-      return urlObj.hostname + urlObj.pathname;
-    } catch {
-      return url;
-    }
+    // Page info is not displayed in the current popup design
   }
 
   async loadExtensionState() {

@@ -222,19 +222,18 @@ class SnapHideContent {
     message.innerHTML = `
       <div class="snaphide-message-content">
         <span class="snaphide-icon">🫰</span>
-        <span>SnapHide Activated</span>
-        <span class="snaphide-instruction">Hover over elements to select, click to turn them to dust!</span>
+        <span>SnapHide Active</span>
       </div>
     `;
     document.body.appendChild(message);
 
-    // Auto-hide after 3 seconds
+    // Auto-hide after 2 seconds
     setTimeout(() => {
       if (message.parentNode) {
         message.classList.add('snaphide-fade-out');
-        setTimeout(() => message.remove(), 500);
+        setTimeout(() => message.remove(), 400);
       }
-    }, 3000);
+    }, 2000);
   }
 
   hideActivationMessage() {

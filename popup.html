@@ -14,53 +14,37 @@
         <span class="logo-icon">🫰</span>
         <h1>SnapHide</h1>
       </div>
-      <div class="version">v1.0.0</div>
     </div>
 
-    <!-- Status Section -->
-    <div class="status-section">
-      <div class="status-indicator" id="statusIndicator">
-        <span class="status-dot" id="statusDot"></span>
-        <span class="status-text" id="statusText">Inactive</span>
-      </div>
-      <button class="toggle-btn" id="toggleBtn">
-        <span id="toggleText">Activate</span>
-      </button>
-    </div>
-
-    <!-- Current Page Section -->
-    <div class="page-section">
-      <h3>Current Page</h3>
-      <div class="page-info">
-        <div class="page-title" id="pageTitle">Loading...</div>
-        <div class="page-url" id="pageUrl">Loading...</div>
-        <div class="deleted-count">
-          <span id="deletedCount">0</span> elements hidden
+    <!-- Main Content -->
+    <div class="main-content">
+      <!-- Status & Toggle -->
+      <div class="status-section">
+        <div class="status-indicator" id="statusIndicator">
+          <span class="status-dot" id="statusDot"></span>
+          <span class="status-text" id="statusText">Inactive</span>
         </div>
+        <button class="toggle-btn" id="toggleBtn">
+          <span id="toggleText">Activate</span>
+        </button>
       </div>
-    </div>
 
-    <!-- Quick Actions -->
-    <div class="actions-section">
-      <button class="action-btn" id="viewLibraryBtn">
-        <span class="action-icon">📚</span>
-        <span>View Library</span>
-      </button>
-      <button class="action-btn" id="restoreAllBtn">
-        <span class="action-icon">🔄</span>
-        <span>Restore All</span>
-      </button>
-    </div>
+      <!-- Hidden Count -->
+      <div class="count-section">
+        <span id="deletedCount">0</span> elements hidden
+      </div>
 
-    <!-- Instructions -->
-    <div class="instructions">
-      <h4>How to use:</h4>
-      <ol>
-        <li>Click "Activate" to enable SnapHide</li>
-        <li>Hover over elements to highlight them</li>
-        <li>Click to snap them away with particles!</li>
-        <li>Use the library to restore elements</li>
-      </ol>
+      <!-- Actions -->
+      <div class="actions-section">
+        <button class="action-btn" id="viewLibraryBtn">
+          <span class="action-icon">📚</span>
+          <span>Library</span>
+        </button>
+        <button class="action-btn" id="restoreAllBtn">
+          <span class="action-icon">🔄</span>
+          <span>Restore</span>
+        </button>
+      </div>
     </div>
 
     <!-- Library Modal -->

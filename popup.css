@@ -7,8 +7,8 @@
 }
 
 body {
-  width: 350px;
-  min-height: 500px;
+  width: 280px;
+  min-height: 320px;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   background: linear-gradient(135deg, #1a1a2e, #16213e);
   color: #ffffff;
@@ -27,7 +27,7 @@ body {
   background: linear-gradient(135deg, #ff6b35, #ff8c42);
   padding: 20px;
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: center;
   box-shadow: 0 4px 20px rgba(255, 107, 53, 0.3);
 }
@@ -54,22 +54,20 @@ body {
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.version {
-  font-size: 12px;
-  opacity: 0.8;
-  background: rgba(255, 255, 255, 0.2);
-  padding: 4px 8px;
-  border-radius: 12px;
-  backdrop-filter: blur(10px);
+/* Main Content */
+.main-content {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  flex: 1;
 }
 
 /* Status Section */
 .status-section {
-  padding: 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
 }
 
 .status-indicator {
@@ -129,56 +127,23 @@ body {
   box-shadow: 0 4px 15px rgba(46, 213, 115, 0.3);
 }
 
-/* Page Section */
-.page-section {
-  padding: 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.page-section h3 {
-  font-size: 16px;
-  margin-bottom: 12px;
-  color: #ff6b35;
-}
-
-.page-info {
-  background: rgba(255, 255, 255, 0.05);
+/* Count Section */
+.count-section {
+  text-align: center;
   padding: 15px;
+  background: rgba(255, 255, 255, 0.05);
   border-radius: 10px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.1);
-}
-
-.page-title {
+  font-size: 16px;
   font-weight: 600;
-  font-size: 14px;
-  margin-bottom: 8px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.page-url {
-  font-size: 12px;
-  opacity: 0.7;
-  font-family: 'Courier New', monospace;
-  margin-bottom: 10px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.deleted-count {
-  font-size: 14px;
   color: #ffd700;
-  font-weight: 600;
 }
 
 /* Actions Section */
 .actions-section {
-  padding: 20px;
   display: flex;
-  gap: 10px;
+  gap: 12px;
 }
 
 .action-btn {
@@ -186,14 +151,14 @@ body {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   color: white;
-  padding: 12px;
+  padding: 15px 12px;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   backdrop-filter: blur(10px);
 }
 
@@ -204,36 +169,12 @@ body {
 }
 
 .action-icon {
-  font-size: 20px;
+  font-size: 24px;
 }
 
 .action-btn span:last-child {
-  font-size: 12px;
-  font-weight: 500;
-}
-
-/* Instructions */
-.instructions {
-  padding: 20px;
-  background: rgba(255, 107, 53, 0.1);
-  margin-top: auto;
-}
-
-.instructions h4 {
-  font-size: 14px;
-  margin-bottom: 10px;
-  color: #ff6b35;
-}
-
-.instructions ol {
-  font-size: 12px;
-  line-height: 1.5;
-  opacity: 0.9;
-  padding-left: 20px;
-}
-
-.instructions li {
-  margin-bottom: 4px;
+  font-size: 13px;
+  font-weight: 600;
 }
 
 /* Modal Styles */
