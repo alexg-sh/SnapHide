@@ -7,35 +7,62 @@ class SnapHideContent {
     this.deletedElements = new Set();
     this.deletedSelectors = [];
     this.hostname = window.location.hostname;
+    this.selectorCache = new Map();
+    this.mutationBatch = [];
+    this.mutationTimeout = null;
     
     this.init();
   }
 
   async init() {
-    // First priority: Load and hide deleted elements immediately
-    await this.loadDeletedElements();
+    // Clean up any early styles that might have been injected
+    const earlyStyle = document.getElementById('snaphide-early-hide-styles');
+    
+    // IMMEDIATE CSS injection to hide elements as fast as possible
+    this.createPreHideStyles();
+    
+    // Load deleted elements and apply styles in parallel
+    const [deletedElements] = await Promise.all([
+      this.loadDeletedElements(),
+      this.preloadExtensionState()
+    ]);
+    
+    // Apply hidden styles immediately after loading
     this.applyHiddenStyles();
     
-    // Check if extension is active for this tab
+    // Remove early style now that we have proper styles
+    if (earlyStyle) {
+      earlyStyle.remove();
+    }
+    
+    // Setup optimized mutation observer
+    this.setupMutationObserver();
+    
+    // Setup event listeners (for messages only)
+    this.setupEventListeners();
+    
+    // Create overlay only when needed
+    if (this.isActive) {
+      this.createOverlay();
+      this.activate();
+    }
+  }
+
+  createPreHideStyles() {
+    // Create a temporary style element that gets replaced once we load actual selectors
+    const preStyle = document.createElement('style');
+    preStyle.id = 'snaphide-pre-hide-styles';
+    preStyle.textContent = '/* SnapHide pre-hide placeholder */';
+    document.head.appendChild(preStyle);
+  }
+
+  async preloadExtensionState() {
     try {
       const response = await chrome.runtime.sendMessage({type: 'GET_EXTENSION_STATE'});
       this.isActive = response.active;
     } catch (error) {
       console.error('Error getting extension state:', error);
       this.isActive = false;
-    }
-    
-    // Setup mutation observer to catch dynamically loaded elements
-    this.setupMutationObserver();
-    
-    // Setup event listeners (for messages only)
-    this.setupEventListeners();
-    
-    // Create overlay
-    this.createOverlay();
-    
-    if (this.isActive) {
-      this.activate();
     }
   }
 
@@ -54,43 +81,116 @@ class SnapHideContent {
   }
 
   setupMutationObserver() {
-    // Observer to catch dynamically added elements that should be hidden
+    // Optimized observer with batching to reduce performance impact
     this.observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        if (mutation.type === 'childList') {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              this.checkAndHideNewElement(node);
-            }
-          });
-        }
-      });
+      // Batch mutations to avoid excessive processing
+      this.mutationBatch.push(...mutations);
+      
+      // Clear existing timeout
+      if (this.mutationTimeout) {
+        clearTimeout(this.mutationTimeout);
+      }
+      
+      // Process batched mutations after a short delay
+      this.mutationTimeout = setTimeout(() => {
+        this.processMutationBatch();
+        this.mutationBatch = [];
+      }, 10); // 10ms batching window
     });
 
+    // Observe with optimized settings
     this.observer.observe(document.body, {
       childList: true,
-      subtree: true
+      subtree: true,
+      // Reduced scope for better performance
+      attributes: false,
+      characterData: false
     });
   }
 
-  checkAndHideNewElement(element) {
-    // Check if this new element matches any deleted selectors
+  processMutationBatch() {
+    const elementsToHide = [];
+    
+    this.mutationBatch.forEach((mutation) => {
+      if (mutation.type === 'childList') {
+        mutation.addedNodes.forEach((node) => {
+          if (node.nodeType === Node.ELEMENT_NODE) {
+            elementsToHide.push(...this.findElementsToHide(node));
+          }
+        });
+      }
+    });
+    
+    // Hide all found elements in one batch
+    if (elementsToHide.length > 0) {
+      // Use requestIdleCallback for better performance if available
+      if (window.requestIdleCallback) {
+        requestIdleCallback(() => this.batchHideElements(elementsToHide));
+      } else {
+        // Fallback for browsers without requestIdleCallback
+        setTimeout(() => this.batchHideElements(elementsToHide), 0);
+      }
+    }
+  }
+
+  findElementsToHide(element) {
+    const elementsToHide = [];
+    
+    // Use more efficient selector matching
     this.deletedSelectors.forEach(selector => {
       try {
+        // Check the element itself
         if (element.matches && element.matches(selector)) {
-          element.style.setProperty('display', 'none', 'important');
-          element.setAttribute('data-snaphide-deleted', 'true');
+          elementsToHide.push(element);
         }
-        // Also check children
+        // Check children more efficiently
         const children = element.querySelectorAll(selector);
-        children.forEach(child => {
-          child.style.setProperty('display', 'none', 'important');
-          child.setAttribute('data-snaphide-deleted', 'true');
-        });
+        elementsToHide.push(...children);
       } catch (e) {
         // Invalid selector, skip
       }
     });
+    
+    return elementsToHide;
+  }
+
+  batchHideElements(elements) {
+    // Use DocumentFragment for batch operations when possible
+    const fragment = document.createDocumentFragment();
+    
+    // Process elements in chunks to avoid blocking the main thread
+    const chunkSize = 50;
+    let index = 0;
+    
+    const processChunk = () => {
+      const chunk = elements.slice(index, index + chunkSize);
+      
+      chunk.forEach(element => {
+        element.style.setProperty('display', 'none', 'important');
+        element.style.setProperty('visibility', 'hidden', 'important');
+        element.style.setProperty('opacity', '0', 'important');
+        element.setAttribute('data-snaphide-deleted', 'true');
+      });
+      
+      index += chunkSize;
+      
+      if (index < elements.length) {
+        // Process next chunk on next frame
+        requestAnimationFrame(processChunk);
+      }
+    };
+    
+    if (elements.length > 0) {
+      processChunk();
+    }
+  }
+
+  checkAndHideNewElement(element) {
+    // Legacy method - now uses batch processing
+    const elementsToHide = this.findElementsToHide(element);
+    if (elementsToHide.length > 0) {
+      this.batchHideElements(elementsToHide);
+    }
   }
 
   handleMessage(request, sender, sendResponse) {
@@ -122,6 +222,12 @@ class SnapHideContent {
   activate() {
     this.isActive = true;
     document.body.style.cursor = 'crosshair';
+    
+    // Create overlay if not exists
+    if (!this.overlay) {
+      this.createOverlay();
+    }
+    
     this.showActivationMessage();
     this.addEventListeners();
   }
@@ -244,6 +350,9 @@ class SnapHideContent {
   }
 
   createOverlay() {
+    // Only create overlay when needed to save resources
+    if (this.overlay) return;
+    
     // Remove existing overlay if any
     const existingOverlay = document.querySelector('.snaphide-overlay');
     if (existingOverlay) {
@@ -548,25 +657,38 @@ class SnapHideContent {
   }
 
   generateSelector(element) {
-    // Generate a unique CSS selector for the element
+    // Check cache first for performance
+    const cacheKey = element.tagName + (element.id || '') + (element.className || '');
+    if (this.selectorCache.has(cacheKey)) {
+      return this.selectorCache.get(cacheKey);
+    }
+    
+    let selector;
+    
+    // Use ID if available (most efficient)
     if (element.id) {
-      return `#${element.id}`;
+      selector = `#${CSS.escape(element.id)}`;
+      this.selectorCache.set(cacheKey, selector);
+      return selector;
     }
     
     const path = [];
     let current = element;
     
     while (current && current.nodeType === Node.ELEMENT_NODE) {
-      let selector = current.nodeName.toLowerCase();
+      let selectorPart = current.nodeName.toLowerCase();
       
       if (current.className && typeof current.className === 'string') {
-        const classes = current.className.split(' ').filter(c => c && c.trim()).join('.');
+        const classes = current.className.split(' ')
+          .filter(c => c && c.trim())
+          .map(c => CSS.escape(c))
+          .join('.');
         if (classes) {
-          selector += '.' + classes;
+          selectorPart += '.' + classes;
         }
       }
       
-      // Add nth-child if needed for uniqueness
+      // Add nth-child only if needed for uniqueness
       const parent = current.parentNode;
       if (parent && parent !== document) {
         const siblings = Array.from(parent.children).filter(sibling => 
@@ -574,20 +696,22 @@ class SnapHideContent {
         );
         if (siblings.length > 1) {
           const index = siblings.indexOf(current) + 1;
-          selector += `:nth-child(${index})`;
+          selectorPart += `:nth-child(${index})`;
         }
       }
       
-      path.unshift(selector);
+      path.unshift(selectorPart);
       current = current.parentNode;
       
       // Stop at body or if we have enough specificity
-      if (current === document.body || path.length > 5) {
+      if (current === document.body || path.length > 3) {
         break;
       }
     }
     
-    return path.join(' > ');
+    selector = path.join(' > ');
+    this.selectorCache.set(cacheKey, selector);
+    return selector;
   }
 
   async loadDeletedElements() {
@@ -597,51 +721,82 @@ class SnapHideContent {
         hostname: this.hostname
       });
       
-      if (response.elements) {
+      if (response.elements && response.elements.length > 0) {
         console.log('Loaded deleted elements:', response.elements.length);
+        
+        // Process selectors in batch for better performance
+        const selectors = response.elements.map(elementData => elementData.selector);
+        this.deletedSelectors.push(...selectors);
+        
+        // Pre-populate selector cache
         response.elements.forEach(elementData => {
-          // Add to our selector list
-          this.deletedSelectors.push(elementData.selector);
+          if (elementData.id) {
+            this.selectorCache.set(elementData.id, elementData.selector);
+          }
         });
+        
+        return response.elements;
       }
+      return [];
     } catch (error) {
       console.error('Error loading deleted elements:', error);
+      return [];
     }
   }
 
   applyHiddenStyles() {
-    // Remove existing style if any
+    const startTime = performance.now();
+    
+    // Remove both existing styles
     const existingStyle = document.getElementById('snaphide-hidden-styles');
-    if (existingStyle) {
-      existingStyle.remove();
-    }
+    const preHideStyle = document.getElementById('snaphide-pre-hide-styles');
+    
+    if (existingStyle) existingStyle.remove();
+    if (preHideStyle) preHideStyle.remove();
 
     if (this.deletedSelectors.length === 0) return;
 
-    // Create CSS to hide all deleted elements
+    // Create optimized CSS to hide all deleted elements
     const style = document.createElement('style');
     style.id = 'snaphide-hidden-styles';
-    style.textContent = this.deletedSelectors.map(selector => {
-      return `${selector} { display: none !important; visibility: hidden !important; opacity: 0 !important; }`;
-    }).join('\n');
     
-    document.head.appendChild(style);
-    console.log('Applied hidden styles for', this.deletedSelectors.length, 'selectors');
+    // Group selectors for more efficient CSS
+    const combinedSelector = this.deletedSelectors.join(', ');
+    style.textContent = `${combinedSelector} { 
+      display: none !important; 
+      visibility: hidden !important; 
+      opacity: 0 !important; 
+    }`;
     
-    // Also hide elements directly
+    // Insert at the very beginning of head for maximum priority
+    if (document.head.firstChild) {
+      document.head.insertBefore(style, document.head.firstChild);
+    } else {
+      document.head.appendChild(style);
+    }
+    
+    const endTime = performance.now();
+    console.log(`SnapHide: Hidden styles applied in ${(endTime - startTime).toFixed(2)}ms for ${this.deletedSelectors.length} selectors`);
+    
+    // Also immediately hide existing elements with batch processing
+    this.batchHideExistingElements();
+  }
+
+  batchHideExistingElements() {
+    const elementsToHide = [];
+    
     this.deletedSelectors.forEach(selector => {
       try {
         const elements = document.querySelectorAll(selector);
-        elements.forEach(element => {
-          element.style.setProperty('display', 'none', 'important');
-          element.style.setProperty('visibility', 'hidden', 'important');
-          element.style.setProperty('opacity', '0', 'important');
-          element.setAttribute('data-snaphide-deleted', 'true');
-        });
+        elementsToHide.push(...elements);
       } catch (e) {
         console.warn('Invalid selector:', selector);
       }
     });
+    
+    if (elementsToHide.length > 0) {
+      this.batchHideElements(elementsToHide);
+    }
   }
 
   restoreElementById(elementId) {
@@ -711,11 +866,63 @@ class SnapHideContent {
   }
 }
 
-// Initialize when DOM is ready
+// Initialize as early as possible for fastest element hiding
+(function() {
+  // Create immediate pre-hiding system
+  const earlyInit = async () => {
+    const startTime = performance.now();
+    
+    // Try to load and apply styles immediately, even before DOM is ready
+    try {
+      const hostname = window.location.hostname;
+      const response = await chrome.runtime.sendMessage({
+        type: 'GET_DELETED_ELEMENTS',
+        hostname: hostname
+      });
+      
+      if (response.elements && response.elements.length > 0) {
+        // Inject styles immediately
+        const selectors = response.elements.map(el => el.selector);
+        const combinedSelector = selectors.join(', ');
+        
+        const earlyStyle = document.createElement('style');
+        earlyStyle.id = 'snaphide-early-hide-styles';
+        earlyStyle.textContent = `${combinedSelector} { 
+          display: none !important; 
+          visibility: hidden !important; 
+          opacity: 0 !important; 
+        }`;
+        
+        // Insert as soon as head exists
+        const insertStyle = () => {
+          if (document.head) {
+            document.head.insertBefore(earlyStyle, document.head.firstChild);
+          } else if (document.documentElement) {
+            document.documentElement.appendChild(earlyStyle);
+          }
+        };
+        
+        insertStyle();
+        
+        const endTime = performance.now();
+        console.log(`SnapHide: Early hide styles applied in ${(endTime - startTime).toFixed(2)}ms for ${response.elements.length} elements`);
+      }
+    } catch (error) {
+      // Silent fail for early initialization
+    }
+  };
+  
+  // Run early init immediately
+  earlyInit();
+})();
+
+// Initialize the main content script when DOM is ready
 if (document.readyState === 'loading') {
+  // If still loading, wait for DOM content
   document.addEventListener('DOMContentLoaded', () => {
     new SnapHideContent();
   });
 } else {
+  // DOM is already ready, initialize immediately
   new SnapHideContent();
 }
