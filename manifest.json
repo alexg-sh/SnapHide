@@ -26,15 +26,15 @@
     "default_popup": "popup.html",
     "default_title": "SnapHide - Click to activate",
     "default_icon": {
-      "16": "icons/snap.png",
-      "48": "icons/snap.png",
-      "128": "icons/snap.png"
+      "16": "icons/snap-16.png",
+      "48": "icons/snap-48.png",
+      "128": "icons/snap-128.png"
     }
   },
   "icons": {
-    "16": "icons/snap.png",
-    "48": "icons/snap.png",
-    "128": "icons/snap.png"
+    "16": "icons/snap-16.png",
+    "48": "icons/snap-48.png",
+    "128": "icons/snap-128.png"
   },
   "web_accessible_resources": [
     {

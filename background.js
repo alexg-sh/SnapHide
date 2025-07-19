@@ -198,18 +198,18 @@ class SnapHideManager {
       const result = await chrome.storage.local.get([`active_${tabId}`]);
       const isActive = !!result[`active_${tabId}`];
       
-      // Use the same snap.png icon for both active and inactive states
-      const iconPath = {
-        "16": "icons/snap.png",
-        "48": "icons/snap.png",
-        "128": "icons/snap.png"
-      };
+      // Try to set the icon - if it fails, we'll catch the error
+      try {
+        await chrome.action.setIcon({
+          path: "icons/snap-48.png",
+          tabId: tabId
+        });
+      } catch (iconError) {
+        console.warn('Could not set custom icon, using default:', iconError);
+        // Don't try to set icon if it fails - Chrome will use the default from manifest
+      }
       
-      await chrome.action.setIcon({
-        path: iconPath,
-        tabId: tabId
-      });
-      
+      // Set title regardless of icon success
       await chrome.action.setTitle({
         title: isActive ? "SnapHide - Active (Click to deactivate)" : "SnapHide - Click to activate",
         tabId: tabId
