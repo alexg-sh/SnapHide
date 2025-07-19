@@ -1,0 +1,45 @@
+{
+  "manifest_version": 3,
+  "name": "SnapHide",
+  "version": "1.0.0",
+  "description": "Hide page elements with a Thanos snap animation effect",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs"
+  ],
+  "host_permissions": [
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["effects.js", "content.js"],
+      "css": ["content.css"],
+      "run_at": "document_end"
+    }
+  ],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "SnapHide - Click to activate",
+    "default_icon": {
+      "16": "icons/snap.png",
+      "48": "icons/snap.png",
+      "128": "icons/snap.png"
+    }
+  },
+  "icons": {
+    "16": "icons/snap.png",
+    "48": "icons/snap.png",
+    "128": "icons/snap.png"
+  },
+  "web_accessible_resources": [
+    {
+      "resources": ["content.css", "effects.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "name": "snaphide-chrome-extension",
+  "version": "1.0.0",
+  "description": "A Chrome extension that hides page elements with Thanos snap animation",
+  "scripts": {
+    "create-icons": "./create-icons.sh",
+    "lint": "eslint *.js",
+    "format": "prettier --write *.js *.css *.html",
+    "zip": "zip -r snaphide-extension.zip . -x '*.git*' 'node_modules/*' '*.zip' '*.md' 'package*.json' 'create-icons.sh'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "thanos",
+    "snap",
+    "animation",
+    "hide-elements",
+    "particles"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "react-turn-to-dust": "^1.0.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.0.0",
+    "prettier": "^2.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yourusername/snaphide-extension.git"
+  },
+  "homepage": "https://github.com/yourusername/snaphide-extension#readme"
+}

@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnapHide</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-container">
+    <!-- Header -->
+    <div class="popup-header">
+      <div class="logo">
+        <span class="logo-icon">🫰</span>
+        <h1>SnapHide</h1>
+      </div>
+      <div class="version">v1.0.0</div>
+    </div>
+
+    <!-- Status Section -->
+    <div class="status-section">
+      <div class="status-indicator" id="statusIndicator">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText">Inactive</span>
+      </div>
+      <button class="toggle-btn" id="toggleBtn">
+        <span id="toggleText">Activate</span>
+      </button>
+    </div>
+
+    <!-- Current Page Section -->
+    <div class="page-section">
+      <h3>Current Page</h3>
+      <div class="page-info">
+        <div class="page-title" id="pageTitle">Loading...</div>
+        <div class="page-url" id="pageUrl">Loading...</div>
+        <div class="deleted-count">
+          <span id="deletedCount">0</span> elements hidden
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="actions-section">
+      <button class="action-btn" id="viewLibraryBtn">
+        <span class="action-icon">📚</span>
+        <span>View Library</span>
+      </button>
+      <button class="action-btn" id="restoreAllBtn">
+        <span class="action-icon">🔄</span>
+        <span>Restore All</span>
+      </button>
+    </div>
+
+    <!-- Instructions -->
+    <div class="instructions">
+      <h4>How to use:</h4>
+      <ol>
+        <li>Click "Activate" to enable SnapHide</li>
+        <li>Hover over elements to highlight them</li>
+        <li>Click to snap them away with particles!</li>
+        <li>Use the library to restore elements</li>
+      </ol>
+    </div>
+
+    <!-- Library Modal -->
+    <div class="modal" id="libraryModal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2>SnapHide Library</h2>
+          <button class="close-btn" id="closeLibraryBtn">&times;</button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="library-tabs">
+            <button class="tab-btn active" data-tab="current">Current Site</button>
+            <button class="tab-btn" data-tab="all">All Sites</button>
+          </div>
+          
+          <div class="tab-content" id="currentTab">
+            <div class="elements-list" id="currentElements">
+              <div class="loading">Loading elements...</div>
+            </div>
+          </div>
+          
+          <div class="tab-content hidden" id="allTab">
+            <div class="websites-list" id="allWebsites">
+              <div class="loading">Loading websites...</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
