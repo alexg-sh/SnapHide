@@ -1,5 +1,5 @@
-# SnapHide Chrome Extension
-
+![Alt text](/icons/snap-128.png)
+# SnapHide Chrome Extension 
 A Chrome extension that allows you to permanently hide page elements with a spectacular Thanos snap animation effect. Elements disintegrate into particles and fly away, and remain hidden permanently across browser sessions.
 
 ## ✨ Features
