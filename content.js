@@ -155,8 +155,7 @@ class SnapHideContent {
   }
 
   batchHideElements(elements) {
-    // Use DocumentFragment for batch operations when possible
-    const fragment = document.createDocumentFragment();
+    // Batch hide elements in chunks to avoid blocking the main thread
     
     // Process elements in chunks to avoid blocking the main thread
     const chunkSize = 50;
@@ -185,13 +184,6 @@ class SnapHideContent {
     }
   }
 
-  checkAndHideNewElement(element) {
-    // Legacy method - now uses batch processing
-    const elementsToHide = this.findElementsToHide(element);
-    if (elementsToHide.length > 0) {
-      this.batchHideElements(elementsToHide);
-    }
-  }
 
   handleMessage(request, sender, sendResponse) {
     console.log('Content script received message:', request.type, request.active);
@@ -413,7 +405,7 @@ class SnapHideContent {
     if (!element || this.deletedElements.has(element)) return;
 
     // Save element data before deletion
-    const elementId = await this.saveElementData(element);
+    const { elementId, selector } = await this.saveElementData(element);
     
     // Add to deleted elements set
     this.deletedElements.add(element);
@@ -430,6 +422,7 @@ class SnapHideContent {
     element.style.setProperty('opacity', '0', 'important');
     element.setAttribute('data-snaphide-deleted', 'true');
     element.setAttribute('data-snaphide-id', elementId);
+    element.setAttribute('data-snaphide-selector', selector);
     
     // Update the styles to ensure persistent hiding
     this.applyHiddenStyles();
@@ -446,161 +439,13 @@ class SnapHideContent {
       SnapHideEffects.addScreenShake();
     }
     
-    // Use the new enhanced turn-to-dust animation system
+    // Use the SnapHideEffects animation system
     if (window.SnapHideEffects) {
-      await SnapHideEffects.createTurnToDustAnimation(element, particleCount);
-    } else {
-      // Fallback to basic particle system
-      await this.createBasicParticleAnimation(element, particleCount);
+      await SnapHideEffects.createDustAnimation(element, { particleCount });
     }
   }
 
-  async createBasicParticleAnimation(element, particleCount) {
-    const rect = element.getBoundingClientRect();
-    
-    // Create particle container
-    const container = document.createElement('div');
-    container.className = 'snaphide-particle-container';
-    container.style.position = 'fixed';
-    container.style.top = '0';
-    container.style.left = '0';
-    container.style.width = '100vw';
-    container.style.height = '100vh';
-    container.style.pointerEvents = 'none';
-    container.style.zIndex = '999999';
-    document.body.appendChild(container);
-
-    // Create dust-like particles with realistic colors
-    const particles = [];
-    for (let i = 0; i < particleCount; i++) {
-      const particle = this.createDustParticle(rect);
-      container.appendChild(particle);
-      particles.push(particle);
-    }
-
-    // Animate particles with random side-biased directions
-    const animationPromises = particles.map((particle, index) => {
-      // Random direction biased to sides (left or right)
-      const angle = (Math.random() < 0.5 ? 0 : Math.PI) + (Math.random() - 0.5) * (Math.PI * 0.5);
-      return this.animateDustParticle(particle, rect, index, angle);
-    });
-    
-    // Wait for all animations to complete
-    await Promise.all(animationPromises);
-    
-    // Clean up
-    container.remove();
-  }
-
-  createDustParticle(elementRect) {
-    const particle = document.createElement('div');
-    particle.className = 'snaphide-dust-particle';
-    
-    const size = Math.random() * 20 + 10; // 10-30px particles (more visible)
-    const particleType = Math.random();
-    
-    // Random position within element bounds
-    const startX = elementRect.left + Math.random() * elementRect.width;
-    const startY = elementRect.top + Math.random() * elementRect.height;
-    
-    // Enhanced dust colors with more variety
-    const dustColors = [
-      '#8B4513', '#A0522D', '#CD853F', '#D2B48C', '#DEB887',
-      '#696969', '#778899', '#A9A9A9', '#BC8F8F', '#F5DEB3',
-      '#F4A460', '#DAA520', '#B8860B', '#CD853F', '#D2691E',
-      '#8FBC8F', '#9ACD32', '#6B8E23', // Some earthy greens
-      '#483D8B', '#6A5ACD', '#9370DB'  // Some magical purples
-    ];
-    
-    const color = dustColors[Math.floor(Math.random() * dustColors.length)];
-    
-    // Different particle shapes for more distinction
-    let particleShape = '';
-    if (particleType < 0.6) {
-      particleShape = '50%'; // Round particles
-    } else if (particleType < 0.8) {
-      particleShape = '0'; // Square particles
-    } else {
-      particleShape = '20%'; // Slightly rounded particles
-    }
-    
-    particle.style.cssText = `
-      position: fixed;
-      left: ${startX}px;
-      top: ${startY}px;
-      width: ${size}px;
-      height: ${size}px;
-      background: ${color};
-      border-radius: ${particleShape};
-      pointer-events: none;
-      z-index: 999999;
-      opacity: ${0.8 + Math.random() * 0.2};
-      box-shadow: 0 0 ${size * 3}px ${color}88, inset 0 0 ${size * 2}px ${color}55;
-      transform: rotate(${Math.random() * 360}deg);
-    `;
-    
-    // Add some particles with special effects
-    if (Math.random() < 0.2) {
-      particle.style.background = `radial-gradient(circle, ${color}, transparent)`;
-    }
-    
-    return particle;
-  }
-
-  animateDustParticle(particle, elementRect, index, baseAngle = 0) {
-    return new Promise(resolve => {
-      const startX = parseFloat(particle.style.left);
-      const startY = parseFloat(particle.style.top);
-      
-      // Unified direction for all particles
-      const angle = baseAngle;
-      // Increased velocity for more spread
-      const velocity = Math.random() * 400 + 200;
-      const gravity = 20;
-      const airResistance = 0.95;
-      
-      let velocityX = Math.cos(angle) * velocity;
-      let velocityY = Math.sin(angle) * velocity;
-      
-      const duration = 1500 + Math.random() * 1000; // Longer duration for better spread
-      const startTime = Date.now();
-      
-      const animate = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-        const t = elapsed / 1000;
-        
-        // Apply enhanced physics
-        velocityY += gravity * 0.016;
-        velocityX *= airResistance;
-        velocityY *= airResistance;
-        
-        // Add subtle turbulence
-        const turbulence = Math.sin(elapsed * 0.005 + index) * 5;
-        velocityX += (Math.random() - 0.5) * 5 * 0.016 + turbulence * 0.016;
-        velocityY += (Math.random() - 0.5) * 5 * 0.016;
-        
-        const currentX = startX + velocityX * t;
-        const currentY = startY + velocityY * t;
-        const opacity = (1 - Math.pow(progress, 0.8)) * 0.9; // Slower fade
-        const scale = 1 - progress * 0.3; // Less shrinking
-        const rotation = progress * 360 * (Math.random() > 0.5 ? 1 : -1); // Full rotation
-        
-        particle.style.left = currentX + 'px';
-        particle.style.top = currentY + 'px';
-        particle.style.opacity = Math.max(0, opacity);
-        particle.style.transform = `scale(${scale}) rotate(${rotation}deg)`;
-        
-        if (progress < 1) {
-          requestAnimationFrame(animate);
-        } else {
-          resolve();
-        }
-      };
-      
-      requestAnimationFrame(animate);
-    });
-  }
+  // Legacy particle fallback methods removed; now exclusively using SnapHideEffects for animations.
 
   async saveElementData(element) {
     const rect = element.getBoundingClientRect();
@@ -644,11 +489,12 @@ class SnapHideContent {
       // Add to our local selector list for immediate and future hiding
       this.deletedSelectors.push(selector);
       console.log('Saved element with selector:', selector, 'id:', elementId);
-      return elementId;
+      return { elementId, selector };
     } catch (error) {
       console.error('Error saving deleted element:', error);
       // Fallback: generate a local ID
-      return await this.getElementId(element);
+      const elementId = await this.getElementId(element);
+      return { elementId, selector };
     }
   }
 
@@ -802,23 +648,28 @@ class SnapHideContent {
   restoreElementById(elementId) {
     const element = document.querySelector(`[data-snaphide-id="${elementId}"]`);
     if (element) {
+      const selectorToRestore = element.getAttribute('data-snaphide-selector');
+
       // Remove inline hiding styles and attributes
       element.style.display = '';
       element.style.visibility = '';
       element.style.opacity = '';
       element.removeAttribute('data-snaphide-deleted');
       element.removeAttribute('data-snaphide-id');
+      element.removeAttribute('data-snaphide-selector');
       this.deletedElements.delete(element);
       
       // Remove this element's selector from hidden list
-      try {
-        const sel = this.generateSelector(element);
-        this.deletedSelectors = this.deletedSelectors.filter(s => s !== sel);
-      } catch (e) {
-        console.warn('Failed to compute selector for restored element', e);
+      if (selectorToRestore) {
+        this.deletedSelectors = this.deletedSelectors.filter(s => s !== selectorToRestore);
       }
+      
       // Reapply hidden styles without this selector
       this.applyHiddenStyles();
+      // Remove inline hiding styles to restore original appearance
+      element.style.display = '';
+      element.style.visibility = '';
+      element.style.opacity = '';
       
       // Add restore animation
       this.createRestoreAnimation(element);
@@ -833,6 +684,7 @@ class SnapHideContent {
       element.style.opacity = '';
       element.removeAttribute('data-snaphide-deleted');
       element.removeAttribute('data-snaphide-id');
+      element.removeAttribute('data-snaphide-selector');
       this.deletedElements.delete(element);
       
       // Add restore animation with delay
